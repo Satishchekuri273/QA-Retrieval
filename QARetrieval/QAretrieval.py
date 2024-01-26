@@ -5,16 +5,12 @@ from langchain.vectorstores import FAISS
 import dill
 import os
 
-os.environ["GOOGLE_API_KEY"] = "AIzaSyBhJTFGzAMfZo7NZFfDk5J7SHjfdmgHTp4"
+# Using Streamlit secrets to access environment variables
+google_api_key = st.secrets["google_api_key"]
 
 # Path to the combined FAISS index file
-#combined_faiss_index_path = 'C:\\Users\\TBRC-LAP-10\\OneDrive\\Desktop\\FAISS files\\combined_faiss_index.pickle'
-# Get the current script directory
 script_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Path to the combined FAISS index file in the same folder as the script
 combined_faiss_index_path = os.path.join(script_dir, 'combined_faiss_index.pickle')
-
 
 # Load the combined FAISS index and texts
 with open(combined_faiss_index_path, 'rb') as f:
