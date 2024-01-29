@@ -1,5 +1,5 @@
 dill==0.3.6
 langchain==0.0.339
 streamlit==1.23.1
-faiss-cpu==1.7.4
+faiss-cpu==1.7.2
 google-generativeai==0.2.2
