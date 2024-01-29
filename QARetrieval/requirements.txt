@@ -14,3 +14,5 @@ google-auth-oauthlib==1.1.0
 google-generativeai==0.2.2
 google-pasta==0.2.0
 googleapis-common-protos==1.61.0
+faiss-cpu==1.7.4
+tiktoken==0.5.1
