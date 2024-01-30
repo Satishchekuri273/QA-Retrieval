@@ -1,5 +1,5 @@
 import streamlit as st
-import pickle
+#import pickle
 from langchain.chains.question_answering import load_qa_chain
 from langchain.llms import GooglePalm
 from langchain.vectorstores import FAISS
