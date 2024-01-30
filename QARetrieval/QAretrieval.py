@@ -1,4 +1,5 @@
 import streamlit as st
+import pickle
 from langchain.chains.question_answering import load_qa_chain
 from langchain.llms import GooglePalm
 from langchain.vectorstores import FAISS
@@ -9,7 +10,7 @@ import os
 api_key = "AIzaSyBhJTFGzAMfZo7NZFfDk5J7SHjfdmgHTp4"
 
 # Path to the combined FAISS index file
-combined_faiss_index_path = 'combined_faiss_index.pickle'
+combined_faiss_index_path = '../combined_faiss_index.pickle'
 # Get the current script directory
 #script_dir = os.path.dirname(os.path.abspath(__file__))
 
