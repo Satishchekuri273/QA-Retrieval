@@ -884,8 +884,8 @@ if __name__ == "__main__":
             </style>
         """
     st.markdown(hide_st_style, unsafe_allow_html=True)
-    logo_path = "logo-TBRC.png"
-    st.image(logo_path, width=200)
+    #logo_path = "logo-TBRC.png"
+    #st.image(logo_path, width=200)
     st.title("Global Market Model AI-bot")
     st.write("Helping you find market information")
     st.markdown("<br>", unsafe_allow_html=True)
