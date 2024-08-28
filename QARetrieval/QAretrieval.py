@@ -537,6 +537,16 @@ def handle_selected_market(selected_market):
                                     df = pd.DataFrame(data[1:], columns=data[0])
                                     df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                     st.dataframe(df)
+                                    if st.button("Generate Analysis"):
+                                        a = fetch_from_generated_analysis(selected_similar_market, "global", "historic data", conn_str)
+                                        if a:
+                                            st.write("Market Analysis:")
+                                            st.write(a)
+                                        else:
+                                            analysis = generate_analysis(df)
+                                            st.write("Market Analysis:")
+                                            st.write(analysis)
+                                            save_to_generated_analysis(selected_similar_market, "global", "historic Data", analysis, conn_str)
                                     hyperlink = get_hyperlink(selected_similar_market,'Global', conn_str)
                                     st.write(f"If you need further details or comparisons:  {hyperlink}")
                                     further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -561,6 +571,16 @@ def handle_selected_market(selected_market):
                                     df = pd.DataFrame(data[1:], columns=data[0])
                                     df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                     st.dataframe(df)
+                                    if st.button("Generate Analysis"):
+                                        a = fetch_from_generated_analysis(selected_similar_market, "global", "forecast data", conn_str)
+                                        if a:
+                                            st.write("Market Analysis:")
+                                            st.write(a)
+                                        else:
+                                            analysis = generate_analysis(df)
+                                            st.write("Market Analysis:")
+                                            st.write(analysis)
+                                            save_to_generated_analysis(selected_similar_market, "global", "forecast Data", analysis, conn_str)
                                     hyperlink = get_hyperlink(selected_similar_market,'Global', conn_str)
                                     st.write(f"If you need further details or comparisons:  {hyperlink}")
                                     further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -593,6 +613,16 @@ def handle_selected_market(selected_market):
                                             df = pd.DataFrame(data[1:], columns=data[0])
                                             df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                             st.dataframe(df)
+                                            if st.button("Generate Analysis"):
+                                                a = fetch_from_generated_analysis(selected_similar_market, selected_country, "historic data", conn_str)
+                                                if a:
+                                                    st.write("Market Analysis:")
+                                                    st.write(a)
+                                                else:
+                                                    analysis = generate_analysis(df)
+                                                    st.write("Market Analysis:")
+                                                    st.write(analysis)
+                                                    save_to_generated_analysis(selected_similar_market, selected_country, "historic Data", analysis, conn_str)
                                             hyperlink = get_hyperlink(selected_similar_market,selected_country, conn_str)
                                             st.write(f"If you need further details or comparisons:  {hyperlink}")
                                             further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -617,6 +647,16 @@ def handle_selected_market(selected_market):
                                             df = pd.DataFrame(data[1:], columns=data[0])
                                             df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                             st.dataframe(df)
+                                            if st.button("Generate Analysis"):
+                                                a = fetch_from_generated_analysis(selected_similar_market, selected_country, "forecast data", conn_str)
+                                                if a:
+                                                    st.write("Market Analysis:")
+                                                    st.write(a)
+                                                else:
+                                                    analysis = generate_analysis(df)
+                                                    st.write("Market Analysis:")
+                                                    st.write(analysis)
+                                                    save_to_generated_analysis(selected_similar_market, selected_country, "forecast Data", analysis, conn_str)
                                             hyperlink = get_hyperlink(selected_similar_market,selected_country, conn_str)
                                             st.write(f"If you need further details or comparisons:  {hyperlink}")
                                             further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -687,6 +727,16 @@ def process_market_size_data(selected_market, selected_country, selected_data_ty
                                 df = pd.DataFrame(data[1:], columns=data[0])
                                 df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                 st.dataframe(df)
+                                if st.button("Generate Analysis"):
+                                    a = fetch_from_generated_analysis(selected_market, selected_similar_geography, "historic data", conn_str)
+                                    if a:
+                                        st.write("Market Analysis:")
+                                        st.write(a)
+                                    else:
+                                        analysis = generate_analysis(df)
+                                        st.write("Market Analysis:")
+                                        st.write(analysis)
+                                        save_to_generated_analysis(selected_market, selected_similar_geography, "historic Data", analysis, conn_str)
                                 hyperlink = get_hyperlink(selected_market,selected_similar_geography, conn_str)
                                 st.write(f"If you need further details or comparisons:  {hyperlink}")
                                 further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -711,6 +761,16 @@ def process_market_size_data(selected_market, selected_country, selected_data_ty
                                 df = pd.DataFrame(data[1:], columns=data[0])
                                 df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                 st.dataframe(df)
+                                if st.button("Generate Analysis"):
+                                    a = fetch_from_generated_analysis(selected_market, selected_similar_geography, "forecast data", conn_str)
+                                    if a:
+                                        st.write("Market Analysis:")
+                                        st.write(a)
+                                    else:
+                                        analysis = generate_analysis(df)
+                                        st.write("Market Analysis:")
+                                        st.write(analysis)
+                                        save_to_generated_analysis(selected_market, selected_similar_geography, "forecast Data", analysis, conn_str)
                                 hyperlink = get_hyperlink(selected_market,selected_similar_geography, conn_str)
                                 st.write(f"If you need further details or comparisons:  {hyperlink}")
                                 further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -886,6 +946,16 @@ def main():
                                 df = pd.DataFrame(data[1:], columns=data[0])
                                 df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                 st.dataframe(df)
+                                if st.button("Generate Analysis"):
+                                    a = fetch_from_generated_analysis(selected_market, "global", "historic data", conn_str)
+                                    if a:
+                                        st.write("Market Analysis:")
+                                        st.write(a)
+                                    else:
+                                        analysis = generate_analysis(df)
+                                        st.write("Market Analysis:")
+                                        st.write(analysis)
+                                        save_to_generated_analysis(selected_market, "global", "historic Data", analysis, conn_str)
                                 hyperlink = get_hyperlink(selected_market,"global", conn_str)
                                 st.write(f"If you need further details or comparisons:  {hyperlink}")
                                 further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -909,6 +979,16 @@ def main():
                                 df = pd.DataFrame(data[1:], columns=data[0])
                                 df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                 st.dataframe(df)
+                                if st.button("Generate Analysis"):
+                                    a = fetch_from_generated_analysis(selected_market, "global", "forecast data", conn_str)
+                                    if a:
+                                        st.write("Market Analysis:")
+                                        st.write(a)
+                                    else:
+                                        analysis = generate_analysis(df)
+                                        st.write("Market Analysis:")
+                                        st.write(analysis)
+                                        save_to_generated_analysis(selected_market, "global", "forecast Data", analysis, conn_str)
                                 hyperlink = get_hyperlink(selected_market,"global", conn_str)
                                 st.write(f"If you need further details or comparisons:  {hyperlink}")
                                 further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
