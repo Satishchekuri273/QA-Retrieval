@@ -46,7 +46,7 @@ def generate_analysis(data):
             {"role": "system", "content": "You are a knowledgeable market analyst."},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=250,  # Adjust as needed
+        #max_tokens=250,  # Adjust as needed
         temperature=0.7,
     )
     
