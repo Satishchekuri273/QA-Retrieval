@@ -27,6 +27,31 @@ llm_chain = LLMChain(prompt=prompt_template, llm=davinci)
 #conn_str = "host=localhost port=5432 dbname=AI_tool user=postgres password=Postgre@273."
 conn_str = os.environ.get("DATABASE_URL")
 
+def generate_analysis(data):
+    prompt_template = """
+    Sample output for CHATGPT to generate a response -  The Global construction market is expected to grow from $14,393.63 billion in 2022 to $18,819.04 billion in 2027 at a compound annual growth rate (CAGR) of 5.5%. The market is expected to grow to $25,928.27 billion in 2032 at a compound annual growth rate (CAGR) of 6.6%. Growth in the forecast period can be attributed to increasing government spending and consumer spending. The development of infrastructure in both developed and developing economies to meet global demand is further expected to boost the construction market during the forecast period.  
+
+    Instructions for CHATGPT to follow - Here is a sample text analysis that I want you to generate based on the data I will provide for a different market and geography. Based on your knowledge and information available on the web, identify key factors that are expected to contribute towards the growth of the market and write market analysis for following data -:{data}
+
+    The data provided is sales value data and is in USD billion. The sales value data provided includes local consumption and imports only and doesn’t include exports.
+    """
+    prompt = prompt_template.format(data=data)
+
+    # Generate text using OpenAI API
+    response = openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a knowledgeable market analyst."},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=250,  # Adjust as needed
+        temperature=0.7,
+    )
+    
+    # Extract and return the generated text
+    generated_text = response.choices[0].message.content
+    return generated_text
+
 # Define the function to rephrase content using LangChain
 def rephrase_with_langchain(content):
     try:
@@ -53,6 +78,23 @@ def save_to_database(selected_market, selected_data_type, rephrased_content, con
                 cursor.execute(insert_query, (selected_market, selected_data_type, rephrased_content))
                 conn.commit()
                 #st.success("Data successfully saved to the database.")
+
+def save_to_generated_analysis(selected_market, selected_country, Data, analysis, conn_str):
+    with psycopg2.connect(conn_str) as conn:
+        with conn.cursor() as cursor:
+            # Check if the entry already exists
+            check_query = """
+                SELECT COUNT(*) FROM generated_analysis WHERE "Market" = LOWER(%s) AND "Geography" = LOWER(%s) AND "Data" = LOWER(%s)
+            """
+            cursor.execute(check_query, (selected_market, selected_country, Data))
+            exists = cursor.fetchone()[0]
+
+            if exists == 0:  # If the entry does not exist, insert new data
+                insert_query = """
+                    INSERT INTO generated_analysis ("Market", "Geography", "Data", "Value") VALUES (LOWER(%s), LOWER(%s), LOWER(%s), %s)
+                """
+                cursor.execute(insert_query, (selected_market, selected_country, Data, analysis))
+                conn.commit()
             
 def fetch_from_output(selected_market, selected_data_type, conn_str):
     with psycopg2.connect(conn_str) as conn:
@@ -69,6 +111,25 @@ def fetch_from_output(selected_market, selected_data_type, conn_str):
                     SELECT "Answer" FROM output_data WHERE "Market" = LOWER(%s) AND "Data" = LOWER(%s)
                 """
                 cursor.execute(fetch_answer_query, (selected_market, selected_data_type))
+                rephrased_content = cursor.fetchone()[0]
+                return rephrased_content
+    return None  # Return None if no data is found
+
+def fetch_from_generated_analysis(selected_market, selected_country, Data, conn_str):
+    with psycopg2.connect(conn_str) as conn:
+        with conn.cursor() as cursor:
+            # Check if the entry exists in the database
+            entry_exists_query = """
+                SELECT COUNT(*) FROM generated_analysis WHERE "Market" = LOWER(%s) AND "Geography" = LOWER(%s) AND "Data" = LOWER(%s)
+            """
+            cursor.execute(entry_exists_query, (selected_market, selected_country, Data))
+            entry_exists = cursor.fetchone()[0]
+
+            if entry_exists > 0:  # If the entry exists, retrieve and display it
+                fetch_answer_query = """
+                    SELECT "Value" FROM generated_analysis WHERE "Market" = LOWER(%s) AND "Geography" = LOWER(%s) AND "Data" = LOWER(%s)
+                """
+                cursor.execute(fetch_answer_query, (selected_market, selected_country, Data))
                 rephrased_content = cursor.fetchone()[0]
                 return rephrased_content
     return None  # Return None if no data is found
@@ -230,33 +291,35 @@ def check_region_data_availability(selected_market, selected_country, conn_str):
 
 def get_top_5_similar_markets_from_database(selected_market, conn_str):
     similar_markets = []
-    query_starts_with = """
+    
+    query_single_word_matches = """
         SELECT DISTINCT segment 
         FROM public.market_data 
-        WHERE LOWER(segment) LIKE LOWER(%s)
+        WHERE LOWER(segment) = LOWER(%s)  -- Exact single-word match
+        OR (LOWER(segment) LIKE LOWER(%s) AND LENGTH(LOWER(segment)) - LENGTH(REPLACE(LOWER(segment), ' ', '')) = 0)  -- Single-word matches
         LIMIT 5;
     """
     
-    query_contains = """
+    query_multi_word_matches = """
         SELECT DISTINCT segment 
         FROM public.market_data 
-        WHERE LOWER(segment) LIKE LOWER(%s)
-        AND LOWER(segment) NOT LIKE LOWER(%s)
+        WHERE LOWER(segment) LIKE LOWER(%s) 
+        AND LOWER(segment) NOT LIKE LOWER(%s)  -- Exclude single-word matches
         LIMIT 5;
     """
     
     try:
         with psycopg2.connect(conn_str) as conn:
             with conn.cursor() as cursor:
-                # First query: segments starting with the selected_market
-                cursor.execute(query_starts_with, (selected_market + '%',))
+                # First query: single-word matches
+                cursor.execute(query_single_word_matches, (selected_market, selected_market + '%'))
                 rows = cursor.fetchall()
                 similar_markets.extend([row[0] for row in rows])
                 
                 # Check if we need more suggestions to fill the top 5
                 if len(similar_markets) < 5:
-                    # Second query: segments containing the selected_market
-                    cursor.execute(query_contains, ('%' + selected_market + '%', selected_market + '%'))
+                    # Second query: multi-word matches
+                    cursor.execute(query_multi_word_matches, ('%' + selected_market + '%', selected_market + '%'))
                     rows = cursor.fetchall()
                     similar_markets.extend([row[0] for row in rows])
                     
@@ -303,6 +366,23 @@ def get_top_5_geographies_for_market_and_region(selected_market, region, conn_st
 
 
 def fetch_answer_from_database(selected_market, data_type, selected_country, conn_str):
+    # Mapping of user inputs to database values
+    country_mapping = {
+        "uk": "uk",
+        "united kingdom": "uk",
+        "uae": "United Arab Emirates",
+        "united arab emirates": "United Arab Emirates",
+        "us" : "USA",
+         "united states of america" : "USA",
+         "united states" : "USA",
+         "the united states of america" : "USA",
+         "america" : "USA"
+    }
+
+    # Standardize the selected_country based on the mapping
+    standardized_country = country_mapping.get(selected_country, selected_country)
+    #print(f"Standardized Country: {standardized_country}")
+    selected_country = standardized_country
     years = {
         "Historical data": ['2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023'],
         "Forecast data": ['2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030', '2031', '2032', '2033']
@@ -340,6 +420,10 @@ def fetch_answer_from_database(selected_market, data_type, selected_country, con
             else:
                 return None, "No data available"
 
+def normalize_market_input(market_input):
+    # Replace "&" with "and" and convert to lowercase for consistent searching
+    return market_input.replace("&", "And")
+
 
 
 # Streamlit app functions
@@ -353,8 +437,8 @@ def handle_selected_market(selected_market):
         if not similar_markets:
             st.error("We don't have this market, please enter a valid market name.")
             return False
-        selected_similar_market = st.selectbox("Select a similar market:",[""] + similar_markets)
-        if selected_similar_market:
+        selected_similar_market = st.selectbox("Select a similar market:",["choose below"] + similar_markets)
+        if selected_similar_market != "choose below":
             #selected_market == selected_similar_market
             # Execute the block of code for the selected similar market
             success_selected_market = handle_selected_market(selected_similar_market)
@@ -549,6 +633,23 @@ def handle_selected_market(selected_market):
 
 
 def process_market_size_data(selected_market, selected_country, selected_data_type):
+    # Mapping of user inputs to database values
+    country_mapping = {
+        "uk": "uk",
+         "united kingdom": "uk",
+         "uae": "United Arab Emirates",
+         "united arab emirates": "United Arab Emirates",
+         "us" : "USA",
+         "united states of america" : "USA",
+         "united states" : "USA",
+         "the united states of america" : "USA",
+         "america" : "USA"
+     }
+
+    # Standardize the selected_country based on the mapping
+    standardized_country = country_mapping.get(selected_country, selected_country)
+    # #print(f"Standardized Country: {standardized_country}")
+    selected_country = standardized_country
     market_size_available = check_data_availability(selected_market, selected_data_type, conn_str)
 
     if market_size_available:
@@ -652,7 +753,10 @@ def main():
     enter_button = st.button("Enter")
 
     if selected_market or enter_button:
-        st.session_state.market = selected_market
+        # Normalize the input market string
+        normalized_market = normalize_market_input(selected_market)
+        st.session_state.market = normalized_market
+        selected_market = normalized_market
         st.session_state.data_type = ""
 
         success_selected_market = handle_selected_market(selected_market)
@@ -835,6 +939,16 @@ def main():
                                         df = pd.DataFrame(data[1:], columns=data[0])
                                         df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                         st.dataframe(df)
+                                        if st.button("Generate Analysis"):
+                                            a = fetch_from_generated_analysis(selected_market, selected_country, "forecast data", conn_str)
+                                            if a:
+                                                st.write("Market Analysis:")
+                                                st.write(a)
+                                            else:
+                                                analysis = generate_analysis(df)
+                                                st.write("Market Analysis:")
+                                                st.write(analysis)
+                                                save_to_generated_analysis(selected_market, selected_country, "forecast Data", analysis, conn_str)
                                         hyperlink = get_hyperlink(selected_market,selected_country, conn_str)
                                         st.write(f"If you need further details or comparisons:  {hyperlink}")
                                         further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -858,6 +972,16 @@ def main():
                                         df = pd.DataFrame(data[1:], columns=data[0])
                                         df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                         st.dataframe(df)
+                                        if st.button("Generate Analysis"):
+                                            a = fetch_from_generated_analysis(selected_market, selected_country, "forecast data", conn_str)
+                                            if a:
+                                                st.write("Market Analysis:")
+                                                st.write(a)
+                                            else:
+                                                analysis = generate_analysis(df)
+                                                st.write("Market Analysis:")
+                                                st.write(analysis)
+                                                save_to_generated_analysis(selected_market, selected_country, "forecast Data", analysis, conn_str)
                                         hyperlink = get_hyperlink(selected_market,selected_country, conn_str)
                                         st.write(f"If you need further details or comparisons:  {hyperlink}")
                                         further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -881,6 +1005,12 @@ if __name__ == "__main__":
             MainMenu {visibility: hidden;}
             header {visibility: hidden;}
             footer {visibility: hidden;}
+            .css-1outpf7 {padding-top: 100px;} /* Adjust padding as needed */
+            /* Custom CSS for text input border */
+            .stTextInput input {
+                border: 2px solid black;
+                border-radius: 4px;
+            }
             </style>
         """
     st.markdown(hide_st_style, unsafe_allow_html=True)
