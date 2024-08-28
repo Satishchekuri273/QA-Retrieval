@@ -6,6 +6,7 @@ from langchain.llms import OpenAI
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 import html
+import openai
 
 LANGCHAIN_TRACING_V2= os.getenv("LANGCHAIN_TRACING_V2")
 LANGCHAIN_ENDPOINT= os.getenv("LANGCHAIN_ENDPOINT")
@@ -940,7 +941,7 @@ def main():
                                         df = df.set_index(df.columns[0], drop=True)  # Set the index to None, removing it
                                         st.dataframe(df)
                                         if st.button("Generate Analysis"):
-                                            a = fetch_from_generated_analysis(selected_market, selected_country, "forecast data", conn_str)
+                                            a = fetch_from_generated_analysis(selected_market, selected_country, "historic data", conn_str)
                                             if a:
                                                 st.write("Market Analysis:")
                                                 st.write(a)
@@ -948,7 +949,7 @@ def main():
                                                 analysis = generate_analysis(df)
                                                 st.write("Market Analysis:")
                                                 st.write(analysis)
-                                                save_to_generated_analysis(selected_market, selected_country, "forecast Data", analysis, conn_str)
+                                                save_to_generated_analysis(selected_market, selected_country, "historic Data", analysis, conn_str)
                                         hyperlink = get_hyperlink(selected_market,selected_country, conn_str)
                                         st.write(f"If you need further details or comparisons:  {hyperlink}")
                                         further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
