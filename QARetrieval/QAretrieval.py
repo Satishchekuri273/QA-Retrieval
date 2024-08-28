@@ -378,7 +378,9 @@ def fetch_answer_from_database(selected_market, data_type, selected_country, con
          "united states of america" : "USA",
          "united states" : "USA",
          "the united states of america" : "USA",
-         "america" : "USA"
+         "america" : "USA",
+        "arab" : "United Arab Emirates",
+        "emirates" : "United Arab Emirates"
     }
 
     # Standardize the selected_country based on the mapping
@@ -685,7 +687,9 @@ def process_market_size_data(selected_market, selected_country, selected_data_ty
          "united states of america" : "USA",
          "united states" : "USA",
          "the united states of america" : "USA",
-         "america" : "USA"
+         "america" : "USA",
+        "arab" : "United Arab Emirates",
+        "emirates" : "United Arab Emirates"
      }
 
     # Standardize the selected_country based on the mapping
