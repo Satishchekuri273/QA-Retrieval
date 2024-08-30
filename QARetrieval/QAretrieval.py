@@ -457,8 +457,8 @@ def handle_selected_market(selected_market):
                 available_data_types = get_available_data_types(selected_similar_market, conn_str)
             
                 data_type_options = ["Market Size"] + available_data_types
-                selected_data_type = st.selectbox("What type of data are you looking for?", ["Select Option Below"] + data_type_options)
-                if selected_data_type != "Select Option Below":
+                selected_data_type = st.selectbox("What type of data are you looking for?", ["Please select from the list below"] + data_type_options)
+                if selected_data_type != "Please select from the list below":
                     st.session_state.data_type = selected_data_type
 
                 if selected_data_type in ["Market Trends", "Market Drivers", "Market Restraints", "Competitive Landscape"]:
@@ -850,8 +850,8 @@ def main():
             data_type_options = available_market_size + available_data_types
             if 'selected_data_type' not in st.session_state:
                 st.session_state.selected_data_type = "select option below"
-            selected_data_type = st.selectbox("What type of data are you looking for?", ["select option below"] + data_type_options,index=0,key='selected_data_type')
-            if selected_data_type != "select option below":
+            selected_data_type = st.selectbox("What type of data are you looking for?", ["Please select from the list below"] + data_type_options,index=0,key='selected_data_type')
+            if selected_data_type != "Please select from the list below":
                 st.session_state.data_type = selected_data_type
 
                 if selected_data_type in ["Market Trends", "Market Drivers", "Market Restraints", "Competitive Landscape"]:
