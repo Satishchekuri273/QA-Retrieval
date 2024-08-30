@@ -380,7 +380,12 @@ def fetch_answer_from_database(selected_market, data_type, selected_country, con
          "the united states of america" : "USA",
          "america" : "USA",
         "arab" : "United Arab Emirates",
-        "emirates" : "United Arab Emirates"
+        "emirates" : "United Arab Emirates",
+        "United kingdom" : "uk",
+        "United Kingdom" : "uk",
+        "UAE" : "United Arab Emirates",
+        "Uae" : "United Arab Emirates",
+        "Arab" : "United Arab Emirates"
     }
 
     # Standardize the selected_country based on the mapping
@@ -441,8 +446,8 @@ def handle_selected_market(selected_market):
         if not similar_markets:
             st.error("We don't have this market, please enter a valid market name.")
             return False
-        selected_similar_market = st.selectbox("Select a similar market:",["choose below"] + similar_markets)
-        if selected_similar_market != "choose below":
+        selected_similar_market = st.selectbox("Select a similar market:",["Please select from the list below"] + similar_markets)
+        if selected_similar_market != "Please select from the list below":
             #selected_market == selected_similar_market
             # Execute the block of code for the selected similar market
             success_selected_market = handle_selected_market(selected_similar_market)
@@ -689,7 +694,12 @@ def process_market_size_data(selected_market, selected_country, selected_data_ty
          "the united states of america" : "USA",
          "america" : "USA",
         "arab" : "United Arab Emirates",
-        "emirates" : "United Arab Emirates"
+        "emirates" : "United Arab Emirates",
+        "United kingdom" : "uk",
+        "United Kingdom" : "uk",
+        "UAE" : "United Arab Emirates",
+        "Uae" : "United Arab Emirates",
+        "Arab" : "United Arab Emirates"
      }
 
     # Standardize the selected_country based on the mapping
