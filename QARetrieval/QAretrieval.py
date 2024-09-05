@@ -29,14 +29,40 @@ llm_chain = LLMChain(prompt=prompt_template, llm=davinci)
 #conn_str = "host=localhost port=5432 dbname=AI_tool user=postgres password=Postgre@273."
 conn_str = os.environ.get("DATABASE_URL")
 
-def generate_analysis(data):
-    prompt_template = """
-    Sample output for CHATGPT to generate a response -  The Global construction market is expected to grow from $14,393.63 billion in 2022 to $18,819.04 billion in 2027 at a compound annual growth rate (CAGR) of 5.5%. The market is expected to grow to $25,928.27 billion in 2032 at a compound annual growth rate (CAGR) of 6.6%. Growth in the forecast period can be attributed to increasing government spending and consumer spending. The development of infrastructure in both developed and developing economies to meet global demand is further expected to boost the construction market during the forecast period.  
+def generate_analysis(data, data_type):
+    if data_type == "Historical Data":
+        prompt_template = """
+        HISTORIC 
+        You will be provided with sales value data (in USD billion) for a specific market and geography. Your task is to generate a concise market analysis based on the provided data. The analysis should be between 150 to 180 words. Use your knowledge and available information to identify key factors that have contributed to the market's growth or decline over the period. The data provided includes local consumption and imports only; exports are not included. Consider economic trends, governmental policies, technological advancements, and any other relevant factors that could impact the market's performance.
 
-    Instructions for CHATGPT to follow - Here is a sample text analysis that I want you to generate based on the data I will provide for a different market and geography. Based on your knowledge and information available on the web, identify key factors that are expected to contribute towards the growth of the market and write market analysis for following data -:{data}
+        Sample Market Analysis Format:
+        The global construction market grew from $11,492.01 billion in 2012 to $14,393.63 billion in 2022 at a compound annual growth rate (CAGR) of 4.6%. The above-global average growth in the historic period can be attributed to high economic growth in developing countries such as China and India, which drove infrastructure development and the growth of industries, including energy, manufacturing, and agriculture. Governments in these countries are also increasingly investing in irrigation and improving access to potable water, thus driving market growth.
 
-    The data provided is sales value data and is in USD billion. The sales value data provided includes local consumption and imports only and doesn’t include exports.
-    """
+        Key Points to Include in Your Analysis:
+        1.	Mention the growth rate and the overall market trend (growth or decline).
+        2.	Highlight any significant economic or geopolitical events affecting the market.
+        3.	Discuss major contributing factors but not limit to economic growth, government investment, technological advancements, or shifts in consumer behavior.
+        4.	Keep the analysis focused and within the word limit of 150-180 words.
+        Data for Analysis: {data}
+        """
+
+    elif data_type == "Forecast Data":
+        prompt_template = """
+        FORECAST
+        You will be provided with sales value data (in USD billion) for a specific market and geography. Your task is to generate a concise market analysis based on the provided data, focusing on the forecast period. The analysis should be between 150 to 180 words. Use your knowledge and available information to identify key factors that are expected to contribute to the market's growth or decline over the forecast period. The data provided includes local consumption and imports only; exports are not included.
+        Sample Data Format:
+        The Global construction market is expected to grow from $14,393.63 billion in 2022 to $18,819.04 billion in 2027 at a compound annual growth rate (CAGR) of 5.5%. The market is expected to grow to $25,928.27 billion in 2032 at a compound annual growth rate (CAGR) of 6.6%. Growth in the forecast period can be attributed to increasing government spending and consumer spending. The development of infrastructure in both developed and developing economies to meet global demand is further expected to boost the construction market during the forecast period. 
+        Key Points to Include in Your Analysis:
+        1.	State the growth rate and overall market trend for the forecast period.
+        2.	Highlight significant economic or geopolitical factors that may impact market growth.
+        3.	Discuss major contributing factors but not limit to as government spending, consumer behavior, technological advancements, and infrastructure development.
+        4.	Keep the analysis focused and within the word limit of 150-180 words.
+        Data for Analysis: {data}
+        """
+
+    else:
+        raise ValueError("Invalid data type specified.")
+
     prompt = prompt_template.format(data=data)
 
     # Generate text using OpenAI API
@@ -46,7 +72,7 @@ def generate_analysis(data):
             {"role": "system", "content": "You are a knowledgeable market analyst."},
             {"role": "user", "content": prompt}
         ],
-        #max_tokens=250,  # Adjust as needed
+        max_tokens=250,  # Adjust as needed
         temperature=0.7,
     )
     
@@ -293,35 +319,58 @@ def check_region_data_availability(selected_market, selected_country, conn_str):
 
 def get_top_5_similar_markets_from_database(selected_market, conn_str):
     similar_markets = []
+    preferred_match = None
     
-    query_single_word_matches = """
-        SELECT DISTINCT segment 
-        FROM public.market_data 
-        WHERE LOWER(segment) = LOWER(%s)  -- Exact single-word match
-        OR (LOWER(segment) LIKE LOWER(%s) AND LENGTH(LOWER(segment)) - LENGTH(REPLACE(LOWER(segment), ' ', '')) = 0)  -- Single-word matches
+    # Define preferred matches based on user input
+    preferred_matches = {
+        "chemical": "Chemicals",
+        "food and beverage": "Food & Beverages"
+    }
+    
+    # Determine the preferred match for the current input
+    preferred_match = preferred_matches.get(selected_market.lower(), None)
+    
+    query_preferred_match = """
+        SELECT DISTINCT segment
+        FROM public.market_data
+        WHERE LOWER(segment) = LOWER(%s)
+        LIMIT 1;
+    """
+    
+    query_start_with = """
+        SELECT DISTINCT segment
+        FROM public.market_data
+        WHERE LOWER(segment) LIKE LOWER(%s)
         LIMIT 5;
     """
     
-    query_multi_word_matches = """
-        SELECT DISTINCT segment 
-        FROM public.market_data 
-        WHERE LOWER(segment) LIKE LOWER(%s) 
-        AND LOWER(segment) NOT LIKE LOWER(%s)  -- Exclude single-word matches
+    query_contains = """
+        SELECT DISTINCT segment
+        FROM public.market_data
+        WHERE LOWER(segment) LIKE LOWER(%s)
+        AND LOWER(segment) NOT IN (SELECT LOWER(segment) FROM public.market_data WHERE LOWER(segment) LIKE LOWER(%s))
         LIMIT 5;
     """
     
     try:
         with psycopg2.connect(conn_str) as conn:
             with conn.cursor() as cursor:
-                # First query: single-word matches
-                cursor.execute(query_single_word_matches, (selected_market, selected_market + '%'))
+                # Check for preferred match first
+                if preferred_match:
+                    cursor.execute(query_preferred_match, (preferred_match,))
+                    row = cursor.fetchone()
+                    if row:
+                        similar_markets.append(row[0])
+                
+                # Fetch markets starting with selected_market
+                cursor.execute(query_start_with, (selected_market + '%',))
                 rows = cursor.fetchall()
                 similar_markets.extend([row[0] for row in rows])
                 
                 # Check if we need more suggestions to fill the top 5
                 if len(similar_markets) < 5:
-                    # Second query: multi-word matches
-                    cursor.execute(query_multi_word_matches, ('%' + selected_market + '%', selected_market + '%'))
+                    # Fetch markets containing selected_market
+                    cursor.execute(query_contains, ('%' + selected_market + '%', selected_market + '%'))
                     rows = cursor.fetchall()
                     similar_markets.extend([row[0] for row in rows])
                     
@@ -332,6 +381,8 @@ def get_top_5_similar_markets_from_database(selected_market, conn_str):
         print(f"Database error: {e}")
     
     return similar_markets
+
+
 def find_region_for_country(country_name, conn_str):
     query = """
         SELECT region
@@ -414,9 +465,11 @@ def fetch_answer_from_database(selected_market, data_type, selected_country, con
             if row:
                 # Fetching row values from the database and formatting them to two decimal places
                 formatted_values = ["{:.2f}".format(float(value)) if value is not None else None for value in row]
-                
+                # Capitalize the first letter of each word in selected_country and selected_market
+                capitalized_country = selected_country.title()
+                capitalized_market = selected_market.title()
                 # Constructing the row values
-                row_values = [selected_country, selected_market, "Sales", "Fixed USD", "Billion"] + formatted_values
+                row_values = [capitalized_country, capitalized_market, "Sales", "Fixed USD", "Billion"] + formatted_values
                 
                 # Constructing the headers
                 headers = ["Geography", "Segment", "Type", "Value", "Units"] + years[data_type]
@@ -433,6 +486,32 @@ def normalize_market_input(market_input):
     # Replace "&" with "and" and convert to lowercase for consistent searching
     return market_input.replace("&", "And")
 
+def sanitize_generated_text(text):
+    # Replace line breaks with spaces to avoid broken formatting
+    cleaned_text = text.replace("\n", " ")
+    
+    # Ensure consistent spacing around numbers, units, and words
+    cleaned_text = cleaned_text.replace("billionin", "billion in ")
+    
+    # Handle any other specific issues with formatting
+    # For example, if a pattern causes trouble, handle it:
+    # cleaned_text = cleaned_text.replace("some_pattern", "desired_format")
+    
+    return cleaned_text
+
+def display_analysis(analysis):
+    # Define consistent CSS styling for the text
+    st.markdown(f"""
+    <style>
+    .analysis-text {{
+        font-family: 'Arial', sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        margin: 20px 0;
+    }}
+    </style>
+    <div class="analysis-text">{analysis}</div>
+    """, unsafe_allow_html=True)
 
 
 # Streamlit app functions
@@ -550,10 +629,11 @@ def handle_selected_market(selected_market):
                                             st.write("Market Analysis:")
                                             st.write(a)
                                         else:
-                                            analysis = generate_analysis(df)
+                                            analysis = generate_analysis(df,"Historical Data")
                                             st.write("Market Analysis:")
-                                            st.write(analysis)
-                                            save_to_generated_analysis(selected_similar_market, "global", "historic Data", analysis, conn_str)
+                                            cleaned_analysis = sanitize_generated_text(analysis)
+                                            styled_analysis = display_analysis(cleaned_analysis)
+                                            save_to_generated_analysis(selected_similar_market, "global", "historic Data", styled_analysis, conn_str)
                                     hyperlink = get_hyperlink(selected_similar_market,'Global', conn_str)
                                     st.write(f"If you need further details or comparisons:  {hyperlink}")
                                     further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -584,10 +664,11 @@ def handle_selected_market(selected_market):
                                             st.write("Market Analysis:")
                                             st.write(a)
                                         else:
-                                            analysis = generate_analysis(df)
+                                            analysis = generate_analysis(df,"Forecast Data")
                                             st.write("Market Analysis:")
-                                            st.write(analysis)
-                                            save_to_generated_analysis(selected_similar_market, "global", "forecast Data", analysis, conn_str)
+                                            cleaned_analysis = sanitize_generated_text(analysis)
+                                            styled_analysis = display_analysis(cleaned_analysis)
+                                            save_to_generated_analysis(selected_similar_market, "global", "forecast Data", styled_analysis, conn_str)
                                     hyperlink = get_hyperlink(selected_similar_market,'Global', conn_str)
                                     st.write(f"If you need further details or comparisons:  {hyperlink}")
                                     further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -626,10 +707,11 @@ def handle_selected_market(selected_market):
                                                     st.write("Market Analysis:")
                                                     st.write(a)
                                                 else:
-                                                    analysis = generate_analysis(df)
+                                                    analysis = generate_analysis(df,"Historical Data")
                                                     st.write("Market Analysis:")
-                                                    st.write(analysis)
-                                                    save_to_generated_analysis(selected_similar_market, selected_country, "historic Data", analysis, conn_str)
+                                                    cleaned_analysis = sanitize_generated_text(analysis)
+                                                    styled_analysis = display_analysis(cleaned_analysis)
+                                                    save_to_generated_analysis(selected_similar_market, selected_country, "historic Data", styled_analysis, conn_str)
                                             hyperlink = get_hyperlink(selected_similar_market,selected_country, conn_str)
                                             st.write(f"If you need further details or comparisons:  {hyperlink}")
                                             further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -660,10 +742,11 @@ def handle_selected_market(selected_market):
                                                     st.write("Market Analysis:")
                                                     st.write(a)
                                                 else:
-                                                    analysis = generate_analysis(df)
+                                                    analysis = generate_analysis(df,"Forecast Data")
                                                     st.write("Market Analysis:")
-                                                    st.write(analysis)
-                                                    save_to_generated_analysis(selected_similar_market, selected_country, "forecast Data", analysis, conn_str)
+                                                    cleaned_analysis = sanitize_generated_text(analysis)
+                                                    styled_analysis = display_analysis(cleaned_analysis)
+                                                    save_to_generated_analysis(selected_similar_market, selected_country, "forecast Data", styled_analysis, conn_str)
                                             hyperlink = get_hyperlink(selected_similar_market,selected_country, conn_str)
                                             st.write(f"If you need further details or comparisons:  {hyperlink}")
                                             further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -747,10 +830,11 @@ def process_market_size_data(selected_market, selected_country, selected_data_ty
                                         st.write("Market Analysis:")
                                         st.write(a)
                                     else:
-                                        analysis = generate_analysis(df)
+                                        analysis = generate_analysis(df,"Historical Data")
                                         st.write("Market Analysis:")
-                                        st.write(analysis)
-                                        save_to_generated_analysis(selected_market, selected_similar_geography, "historic Data", analysis, conn_str)
+                                        cleaned_analysis = sanitize_generated_text(analysis)
+                                        styled_analysis = display_analysis(cleaned_analysis)
+                                        save_to_generated_analysis(selected_market, selected_similar_geography, "historic Data", styled_analysis, conn_str)
                                 hyperlink = get_hyperlink(selected_market,selected_similar_geography, conn_str)
                                 st.write(f"If you need further details or comparisons:  {hyperlink}")
                                 further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -781,10 +865,11 @@ def process_market_size_data(selected_market, selected_country, selected_data_ty
                                         st.write("Market Analysis:")
                                         st.write(a)
                                     else:
-                                        analysis = generate_analysis(df)
+                                        analysis = generate_analysis(df,"Forecast Data")
                                         st.write("Market Analysis:")
-                                        st.write(analysis)
-                                        save_to_generated_analysis(selected_market, selected_similar_geography, "forecast Data", analysis, conn_str)
+                                        cleaned_analysis = sanitize_generated_text(analysis)
+                                        styled_analysis = display_analysis(cleaned_analysis)
+                                        save_to_generated_analysis(selected_market, selected_similar_geography, "forecast Data", styled_analysis, conn_str)
                                 hyperlink = get_hyperlink(selected_market,selected_similar_geography, conn_str)
                                 st.write(f"If you need further details or comparisons:  {hyperlink}")
                                 further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -966,10 +1051,11 @@ def main():
                                         st.write("Market Analysis:")
                                         st.write(a)
                                     else:
-                                        analysis = generate_analysis(df)
+                                        analysis = generate_analysis(df,"Historical Data")
                                         st.write("Market Analysis:")
-                                        st.write(analysis)
-                                        save_to_generated_analysis(selected_market, "global", "historic Data", analysis, conn_str)
+                                        cleaned_analysis = sanitize_generated_text(analysis)
+                                        styled_analysis = display_analysis(cleaned_analysis)
+                                        save_to_generated_analysis(selected_market, "global", "historic Data", styled_analysis, conn_str)
                                 hyperlink = get_hyperlink(selected_market,"global", conn_str)
                                 st.write(f"If you need further details or comparisons:  {hyperlink}")
                                 further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -999,10 +1085,11 @@ def main():
                                         st.write("Market Analysis:")
                                         st.write(a)
                                     else:
-                                        analysis = generate_analysis(df)
+                                        analysis = generate_analysis(df,"Forecast Data")
                                         st.write("Market Analysis:")
-                                        st.write(analysis)
-                                        save_to_generated_analysis(selected_market, "global", "forecast Data", analysis, conn_str)
+                                        cleaned_analysis = sanitize_generated_text(analysis)
+                                        styled_analysis = display_analysis(cleaned_analysis)
+                                        save_to_generated_analysis(selected_market, "global", "forecast Data", styled_analysis, conn_str)
                                 hyperlink = get_hyperlink(selected_market,"global", conn_str)
                                 st.write(f"If you need further details or comparisons:  {hyperlink}")
                                 further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -1041,10 +1128,11 @@ def main():
                                                 st.write("Market Analysis:")
                                                 st.write(a)
                                             else:
-                                                analysis = generate_analysis(df)
+                                                analysis = generate_analysis(df,"Historical Data")
                                                 st.write("Market Analysis:")
-                                                st.write(analysis)
-                                                save_to_generated_analysis(selected_market, selected_country, "historic Data", analysis, conn_str)
+                                                cleaned_analysis = sanitize_generated_text(analysis)
+                                                styled_analysis = display_analysis(cleaned_analysis)
+                                                save_to_generated_analysis(selected_market, selected_country, "historic Data", styled_analysis, conn_str)
                                         hyperlink = get_hyperlink(selected_market,selected_country, conn_str)
                                         st.write(f"If you need further details or comparisons:  {hyperlink}")
                                         further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -1074,10 +1162,11 @@ def main():
                                                 st.write("Market Analysis:")
                                                 st.write(a)
                                             else:
-                                                analysis = generate_analysis(df)
+                                                analysis = generate_analysis(df,"Forecast Data")
                                                 st.write("Market Analysis:")
-                                                st.write(analysis)
-                                                save_to_generated_analysis(selected_market, selected_country, "forecast Data", analysis, conn_str)
+                                                cleaned_analysis = sanitize_generated_text(analysis)
+                                                styled_analysis = display_analysis(cleaned_analysis)
+                                                save_to_generated_analysis(selected_market, selected_country, "forecast Data", styled_analysis, conn_str)
                                         hyperlink = get_hyperlink(selected_market,selected_country, conn_str)
                                         st.write(f"If you need further details or comparisons:  {hyperlink}")
                                         further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -1107,6 +1196,12 @@ if __name__ == "__main__":
                 border: 2px solid black;
                 border-radius: 4px;
             }
+            /* Custom CSS for selectbox border */
+            .stSelectbox > div {
+                border: 2px solid black;
+                border-radius: 4px;
+            }
+        
             </style>
         """
     st.markdown(hide_st_style, unsafe_allow_html=True)
