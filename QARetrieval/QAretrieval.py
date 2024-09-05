@@ -33,10 +33,10 @@ def generate_analysis(data, data_type):
     if data_type == "Historical Data":
         prompt_template = """
         HISTORIC 
-        You will be provided with sales value data (in USD billion) for a specific market and geography. Your task is to generate a concise market analysis based on the provided data. The analysis should be between 150 to 180 words. Use your knowledge and available information to identify key factors that have contributed to the market's growth or decline over the period. The data provided includes local consumption and imports only; exports are not included. Consider economic trends, governmental policies, technological advancements, and any other relevant factors that could impact the market's performance.
+        You will be provided with sales value data (in USD billion) for a specific market and geography. Your task is to generate a concise market analysis based on the provided data from 2013 to 2023. The analysis should be between 150 to 180 words. Use your knowledge and available information to identify key factors that have contributed to the market's growth or decline over the period. The data provided includes local consumption and imports only; exports are not included. Consider economic trends, governmental policies, technological advancements, and any other relevant factors that could impact the market's performance.
 
         Sample Market Analysis Format:
-        The global construction market grew from $11,492.01 billion in 2012 to $14,393.63 billion in 2022 at a compound annual growth rate (CAGR) of 4.6%. The above-global average growth in the historic period can be attributed to high economic growth in developing countries such as China and India, which drove infrastructure development and the growth of industries, including energy, manufacturing, and agriculture. Governments in these countries are also increasingly investing in irrigation and improving access to potable water, thus driving market growth.
+        The global construction market grew from $11,492.01 billion in 2013 to $14,393.63 billion in 2023 at a compound annual growth rate (CAGR) of 4.6%. The above-global average growth in the historic period can be attributed to high economic growth in developing countries such as China and India, which drove infrastructure development and the growth of industries, including energy, manufacturing, and agriculture. Governments in these countries are also increasingly investing in irrigation and improving access to potable water, thus driving market growth.
 
         Key Points to Include in Your Analysis:
         1.	Mention the growth rate and the overall market trend (growth or decline).
@@ -44,20 +44,22 @@ def generate_analysis(data, data_type):
         3.	Discuss major contributing factors but not limit to economic growth, government investment, technological advancements, or shifts in consumer behavior.
         4.	Keep the analysis focused and within the word limit of 150-180 words.
         Data for Analysis: {data}
+
         """
 
     elif data_type == "Forecast Data":
         prompt_template = """
         FORECAST
-        You will be provided with sales value data (in USD billion) for a specific market and geography. Your task is to generate a concise market analysis based on the provided data, focusing on the forecast period. The analysis should be between 150 to 180 words. Use your knowledge and available information to identify key factors that are expected to contribute to the market's growth or decline over the forecast period. The data provided includes local consumption and imports only; exports are not included.
+        You will be provided with sales value data (in USD billion) for a specific market and geography. Your task is to generate a concise market analysis based on the provided data from 2023 to 2033, focusing on the forecast period. The analysis should be between 150 to 180 words. Use your knowledge and available information to identify key factors that are expected to contribute to the market's growth or decline over the forecast period. The data provided includes local consumption and imports only; exports are not included.
         Sample Data Format:
-        The Global construction market is expected to grow from $14,393.63 billion in 2022 to $18,819.04 billion in 2027 at a compound annual growth rate (CAGR) of 5.5%. The market is expected to grow to $25,928.27 billion in 2032 at a compound annual growth rate (CAGR) of 6.6%. Growth in the forecast period can be attributed to increasing government spending and consumer spending. The development of infrastructure in both developed and developing economies to meet global demand is further expected to boost the construction market during the forecast period. 
+        The Global construction market is expected to grow from $14,393.63 billion in 2023 to $18,819.04 billion in 2028 at a compound annual growth rate (CAGR) of 5.5%. The market is expected to grow to $25,928.27 billion in 2033 at a compound annual growth rate (CAGR) of 6.6%. Growth in the forecast period can be attributed to increasing government spending and consumer spending. The development of infrastructure in both developed and developing economies to meet global demand is further expected to boost the construction market during the forecast period. 
         Key Points to Include in Your Analysis:
         1.	State the growth rate and overall market trend for the forecast period.
         2.	Highlight significant economic or geopolitical factors that may impact market growth.
         3.	Discuss major contributing factors but not limit to as government spending, consumer behavior, technological advancements, and infrastructure development.
         4.	Keep the analysis focused and within the word limit of 150-180 words.
         Data for Analysis: {data}
+
         """
 
     else:
