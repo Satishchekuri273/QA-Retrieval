@@ -515,6 +515,24 @@ def display_analysis(analysis):
     <div class="analysis-text">{analysis}</div>
     """, unsafe_allow_html=True)
 
+# Function to retrieve available countries for the selected market and data type using PostgreSQL
+def get_available_countries(selected_market, conn_str):
+    query = f"""
+    SELECT DISTINCT geography 
+    FROM market_data 
+    WHERE LOWER(segment) = LOWER(%s)
+    """
+    try:
+        conn = psycopg2.connect(conn_str)  # Connect to PostgreSQL database
+        cursor = conn.cursor()
+        cursor.execute(query, (selected_market,))
+        countries = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [country[0] for country in countries]  # Return list of available countries
+    except Exception as e:
+        st.write(f"Error fetching countries: {str(e)}")
+        return []
 
 # Streamlit app functions
 def handle_selected_market(selected_market):
@@ -686,8 +704,11 @@ def handle_selected_market(selected_market):
                                         # Rerun the app
                                         st.experimental_rerun()
                         elif data_available_at_global_level:
-                            selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
-                            if selected_country:
+                            available_countries = get_available_countries(selected_similar_market, conn_str)
+                            #selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
+                            selected_country = st.selectbox("Which geography are you interested in?",["Please choose country from list"] + available_countries)
+                            #selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
+                            if selected_country !="Please choose country from list":
                                 success_geography = process_market_size_data(selected_similar_market, selected_country, selected_data_type)
                                 if success_geography:
                                     # Continue with historical_or_forecast radio button and answer retrieval
@@ -1107,8 +1128,10 @@ def main():
                                     # Rerun the app
                                     st.experimental_rerun()
                     elif data_available_at_global_level:
-                        selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
-                        if selected_country:
+                        available_countries = get_available_countries(selected_market, conn_str)
+                        #selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
+                        selected_country = st.selectbox("Which geography are you interested in?",["Please choose country from list"] + available_countries)
+                        if selected_country !="Please choose country from list":
                             success_geography = process_market_size_data(selected_market, selected_country, selected_data_type)
                             if success_geography:
                                 # Continue with historical_or_forecast radio button and answer retrieval
