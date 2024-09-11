@@ -706,9 +706,9 @@ def handle_selected_market(selected_market):
                         elif data_available_at_global_level:
                             available_countries = get_available_countries(selected_similar_market, conn_str)
                             #selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
-                            selected_country = st.selectbox("Which geography are you interested in?",["Please choose country from list"] + available_countries)
+                            selected_country = st.selectbox("Which geography are you interested in?",["Please select a geography from the list below"] + available_countries)
                             #selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
-                            if selected_country !="Please choose country from list":
+                            if selected_country !="Please select a geography from the list below":
                                 success_geography = process_market_size_data(selected_similar_market, selected_country, selected_data_type)
                                 if success_geography:
                                     # Continue with historical_or_forecast radio button and answer retrieval
@@ -1130,8 +1130,8 @@ def main():
                     elif data_available_at_global_level:
                         available_countries = get_available_countries(selected_market, conn_str)
                         #selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
-                        selected_country = st.selectbox("Which geography are you interested in?",["Please choose country from list"] + available_countries)
-                        if selected_country !="Please choose country from list":
+                        selected_country = st.selectbox("Which geography are you interested in?",["Please select a geography from the list below"] + available_countries)
+                        if selected_country !="Please select a geography from the list below":
                             success_geography = process_market_size_data(selected_market, selected_country, selected_data_type)
                             if success_geography:
                                 # Continue with historical_or_forecast radio button and answer retrieval
