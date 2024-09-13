@@ -534,6 +534,20 @@ def get_available_countries(selected_market, conn_str):
         st.write(f"Error fetching countries: {str(e)}")
         return []
 
+def scroll_to_bottom():
+    js = """
+    <script>
+    function scrollToBottom() {
+        var mainDiv = parent.document.querySelector('section.main');
+        if (mainDiv) {
+            mainDiv.scrollTop = mainDiv.scrollHeight;
+        }
+    }
+    scrollToBottom();
+    </script>
+    """
+    st.components.v1.html(js, height=0)
+
 # Streamlit app functions
 def handle_selected_market(selected_market):
     if check_market_in_database(selected_market, conn_str):
@@ -573,6 +587,7 @@ def handle_selected_market(selected_market):
                         if selected_data_type == "Competitive Landscape":
                             st.write(f"Key insights on the competitive landscape of the {selected_similar_market} market are:")
                         st.write(rephrased_content)
+                        scroll_to_bottom()
                         reportlink = get_reportlink(selected_similar_market, conn_str)
                         st.write(f"If you need further details :  {reportlink}")
                         further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -601,6 +616,7 @@ def handle_selected_market(selected_market):
                                 if selected_data_type == "Competitive Landscape":
                                     st.write(f"Key insights on the competitive landscape of the {selected_similar_market} market are:")
                                 st.write(rephrased_content)
+                                scroll_to_bottom()
                                 reportlink = get_reportlink(selected_similar_market, conn_str)
                                 st.write(f"If you need further details :  {reportlink}")
                                 save_to_database(selected_similar_market, selected_data_type, rephrased_content, conn_str)
@@ -633,7 +649,7 @@ def handle_selected_market(selected_market):
                             # Handle the global case
                             st.write("Data available only at a global level.")
                             historical_or_forecast = st.radio("Do you need historical data or forecasts?", ["Select option below","Historical data", "Forecast data"])
-                                
+                            scroll_to_bottom()    
                             if historical_or_forecast == "Historical data":
                                 data, error = fetch_answer_from_database(selected_similar_market, "Historical data", "global", conn_str)
                                 if error:
@@ -655,6 +671,7 @@ def handle_selected_market(selected_market):
                                             styled_analysis = display_analysis(cleaned_analysis)
                                             save_to_generated_analysis(selected_similar_market, "global", "historic Data", styled_analysis, conn_str)
                                     hyperlink = get_hyperlink(selected_similar_market,'Global', conn_str)
+                                    scroll_to_bottom()
                                     st.write(f"If you need further details or comparisons:  {hyperlink}")
                                     further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
                                     further_datatype = "select option below"
@@ -690,6 +707,7 @@ def handle_selected_market(selected_market):
                                             styled_analysis = display_analysis(cleaned_analysis)
                                             save_to_generated_analysis(selected_similar_market, "global", "forecast Data", styled_analysis, conn_str)
                                     hyperlink = get_hyperlink(selected_similar_market,'Global', conn_str)
+                                    scroll_to_bottom()
                                     st.write(f"If you need further details or comparisons:  {hyperlink}")
                                     further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
                                     further_datatype = "select option below"
@@ -707,6 +725,7 @@ def handle_selected_market(selected_market):
                             available_countries = get_available_countries(selected_similar_market, conn_str)
                             #selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
                             selected_country = st.selectbox("Which geography are you interested in?",["Please select a geography from the list below"] + available_countries)
+                            scroll_to_bottom()
                             #selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
                             if selected_country !="Please select a geography from the list below":
                                 success_geography = process_market_size_data(selected_similar_market, selected_country, selected_data_type)
@@ -736,6 +755,7 @@ def handle_selected_market(selected_market):
                                                     styled_analysis = display_analysis(cleaned_analysis)
                                                     save_to_generated_analysis(selected_similar_market, selected_country, "historic Data", styled_analysis, conn_str)
                                             hyperlink = get_hyperlink(selected_similar_market,selected_country, conn_str)
+                                            scroll_to_bottom()
                                             st.write(f"If you need further details or comparisons:  {hyperlink}")
                                             further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
                                             further_datatype = "select option below"
@@ -771,6 +791,7 @@ def handle_selected_market(selected_market):
                                                     styled_analysis = display_analysis(cleaned_analysis)
                                                     save_to_generated_analysis(selected_similar_market, selected_country, "forecast Data", styled_analysis, conn_str)
                                             hyperlink = get_hyperlink(selected_similar_market,selected_country, conn_str)
+                                            scroll_to_bottom()
                                             st.write(f"If you need further details or comparisons:  {hyperlink}")
                                             further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
                                             further_datatype = "select option below"
@@ -989,6 +1010,7 @@ def main():
 
                         # Display the rephrased content within a <div> using the .font-style class
                         st.markdown(f'<div class="font-style">{escaped_content}</div>', unsafe_allow_html=True)
+                        scroll_to_bottom()
                         reportlink = get_reportlink(selected_market, conn_str)
                         st.write(f"If you need further details :  {reportlink}")
                         further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
@@ -1028,6 +1050,7 @@ def main():
 
                                 # Display the rephrased content within a <div> using the .font-style class
                                 st.markdown(f'<div class="font-style">{escaped_content}</div>', unsafe_allow_html=True)
+                                scroll_to_bottom()
                                 reportlink = get_reportlink(selected_market, conn_str)
                                 st.write(f"If you need further details :  {reportlink}")
                                 save_to_database(selected_market, selected_data_type, rephrased_content, conn_str)
@@ -1058,7 +1081,7 @@ def main():
                         # Handle the global case
                         st.write("Data available only at a global level.")
                         historical_or_forecast = st.radio("Do you need historical data or forecasts?", ["Select option below","Historical data", "Forecast data"])
-                                
+                        scroll_to_bottom()        
                         if historical_or_forecast == "Historical data":
                             data, error = fetch_answer_from_database(selected_market, "Historical data", "global", conn_str)
                             if error:
@@ -1080,6 +1103,7 @@ def main():
                                         styled_analysis = display_analysis(cleaned_analysis)
                                         save_to_generated_analysis(selected_market, "global", "historic Data", styled_analysis, conn_str)
                                 hyperlink = get_hyperlink(selected_market,"global", conn_str)
+                                scroll_to_bottom()
                                 st.write(f"If you need further details or comparisons:  {hyperlink}")
                                 further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
                                 further_datatype = "select option below"
@@ -1114,6 +1138,7 @@ def main():
                                         styled_analysis = display_analysis(cleaned_analysis)
                                         save_to_generated_analysis(selected_market, "global", "forecast Data", styled_analysis, conn_str)
                                 hyperlink = get_hyperlink(selected_market,"global", conn_str)
+                                scroll_to_bottom()
                                 st.write(f"If you need further details or comparisons:  {hyperlink}")
                                 further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
                                 further_datatype = "select option below"
@@ -1131,6 +1156,7 @@ def main():
                         available_countries = get_available_countries(selected_market, conn_str)
                         #selected_country = st.text_input("Which geography are you interested in? Please specify a country or region:", value=st.session_state.country)  # Use st.session_state.country as the default value
                         selected_country = st.selectbox("Which geography are you interested in?",["Please select a geography from the list below"] + available_countries)
+                        scroll_to_bottom()
                         if selected_country !="Please select a geography from the list below":
                             success_geography = process_market_size_data(selected_market, selected_country, selected_data_type)
                             if success_geography:
@@ -1159,6 +1185,7 @@ def main():
                                                 styled_analysis = display_analysis(cleaned_analysis)
                                                 save_to_generated_analysis(selected_market, selected_country, "historic Data", styled_analysis, conn_str)
                                         hyperlink = get_hyperlink(selected_market,selected_country, conn_str)
+                                        scroll_to_bottom()
                                         st.write(f"If you need further details or comparisons:  {hyperlink}")
                                         further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
                                         further_datatype = "select option below"
@@ -1193,6 +1220,7 @@ def main():
                                                 styled_analysis = display_analysis(cleaned_analysis)
                                                 save_to_generated_analysis(selected_market, selected_country, "forecast Data", styled_analysis, conn_str)
                                         hyperlink = get_hyperlink(selected_market,selected_country, conn_str)
+                                        scroll_to_bottom()
                                         st.write(f"If you need further details or comparisons:  {hyperlink}")
                                         further_assistance = st.text_input("What would you like to search for next? Please specify which market you are seeking information on in the text box below ?")
                                         further_datatype = "select option below"
